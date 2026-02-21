@@ -10,6 +10,13 @@ def setup_schema():
         "CREATE CONSTRAINT IF NOT EXISTS FOR (r:Resource) REQUIRE r.ResourceId IS UNIQUE",
         "CREATE CONSTRAINT IF NOT EXISTS FOR (sv:Service) REQUIRE sv.ServiceName IS UNIQUE",
         "CREATE CONSTRAINT IF NOT EXISTS FOR (loc:Location) REQUIRE loc.RegionId IS UNIQUE",
+        "CREATE CONSTRAINT IF NOT EXISTS FOR (tf:TimeFrame) REQUIRE tf.TimeFrameId IS UNIQUE",
+        "CREATE CONSTRAINT IF NOT EXISTS FOR (aa:AWSAttributes) REQUIRE aa.id IS UNIQUE",
+        "CREATE CONSTRAINT IF NOT EXISTS FOR (az:AzureAttributes) REQUIRE az.id IS UNIQUE",
+        "CREATE CONSTRAINT IF NOT EXISTS FOR (ca:CostAllocation) REQUIRE ca.allocationRuleName IS UNIQUE",
+        "CREATE CONSTRAINT IF NOT EXISTS FOR (app:Application) REQUIRE app.name IS UNIQUE",
+        "CREATE CONSTRAINT IF NOT EXISTS FOR (env:Environment) REQUIRE env.name IS UNIQUE",
+        "CREATE CONSTRAINT IF NOT EXISTS FOR (cc:CostCentre) REQUIRE cc.name IS UNIQUE",
         
         # Performance indexes
         "CREATE INDEX IF NOT EXISTS FOR (cr:CostRecord) ON (cr.ChargePeriodStart)",

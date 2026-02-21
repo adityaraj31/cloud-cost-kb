@@ -34,30 +34,47 @@ def create_vector_index():
 def generate_and_store_embeddings():
     print("Generating embeddings for nodes...")
     
-    # Target nodes and their descriptive properties
     targets = [
         {"label": "Service", "prop": "ServiceName"},
         {"label": "Resource", "prop": "ResourceName"},
         {"label": "Account", "prop": "BillingAccountName"},
         {"label": "SubAccount", "prop": "SubAccountName"},
         {"label": "Location", "prop": "RegionName"},
-        {"label": "Charge", "prop": "chargeDescription"}
+        {"label": "Charge", "prop": "chargeDescription"},
+        {"label": "Knowledge", "prop": "content"},
+        {"label": "Standard", "prop": "name"},
+        {"label": "FOCUSColumn", "prop": "name"},
+        {"label": "Application", "prop": "name"},
+        {"label": "Environment", "prop": "name"},
+        {"label": "CostCentre", "prop": "name"},
+        {"label": "CostAllocation", "prop": "allocationRuleName"}
     ]
     
     for target in targets:
         label = target["label"]
         prop = target["prop"]
         
-        nodes = db.query(f"MATCH (n:{label}) WHERE n.{prop} IS NOT NULL RETURN id(n) as id, n.{prop} as text")
+        print(f"Processing label: {label}")
+        # Use elementId as it is safer for newer Neo4j versions
+        nodes = db.query(f"MATCH (n:{label}) WHERE n.{prop} IS NOT NULL RETURN elementId(n) as id, n.{prop} as text")
         
-        for node in nodes:
-            node_id = node["id"]
-            text = node["text"]
+        if not nodes:
+            continue
             
-            embedding = model.encode(text).tolist()
-            
-            db.query(f"MATCH (n) WHERE id(n) = $id SET n.embedding = $embedding", 
-                     {"id": node_id, "embedding": embedding})
+        ids = [node["id"] for node in nodes]
+        texts = [node["text"] for node in nodes]
+        
+        # Batch encode
+        embeddings = model.encode(texts, batch_size=32, show_progress_bar=True).tolist()
+        
+        # Batch update using UNWIND
+        update_query = """
+        UNWIND $data as item
+        MATCH (n) WHERE elementId(n) = item.id
+        SET n.embedding = item.embedding
+        """
+        data = [{"id": id_, "embedding": emb} for id_, emb in zip(ids, embeddings)]
+        db.query(update_query, {"data": data})
             
     print("Finished generating and storing embeddings.")
 

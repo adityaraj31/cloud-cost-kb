@@ -1,0 +1,23 @@
+# Environment
+.env
+.venv/
+.python-version
+
+# Python
+__pycache__/
+*.py[cod]
+build/
+dist/
+*.egg-info/
+
+# Data
+data/
+
+# IDEs and Tools
+.vscode/
+.idea/
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db

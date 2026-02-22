@@ -1,4 +1,8 @@
+import sys
 import os
+sys.path.append(os.getcwd())
+
+import os as os_lib
 from neo4j import GraphDatabase
 from sentence_transformers import SentenceTransformer
 from src.graph.db import db

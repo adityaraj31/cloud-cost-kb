@@ -1,14 +1,16 @@
-import google.generativeai as genai
+from openai import OpenAI
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-
 class CloudGenerator:
     def __init__(self):
-        self.model = genai.GenerativeModel('gemini-2.5-flash-lite')
+        self.client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=os.getenv("OPENROUTER_API_KEY"),
+        )
+        self.model = "google/gemma-2-9b-it:free"
 
     def generate_answer(self, query, context):
         prompt = f"""
@@ -32,8 +34,13 @@ class CloudGenerator:
         """
         
         try:
-            response = self.model.generate_content(prompt)
-            return response.text
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            return response.choices[0].message.content
         except Exception as e:
             return f"Error in LLM generation: {e}"
 

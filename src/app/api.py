@@ -1,5 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+import sys
+import os
+# Ensure the root directory is in the path so 'src' can be found
+if os.getcwd() not in sys.path:
+    sys.path.append(os.getcwd())
+
 from src.rag.pipeline import run_rag_pipeline
 from src.graph.db import db
 import uvicorn

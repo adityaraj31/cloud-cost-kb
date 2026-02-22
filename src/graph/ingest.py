@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.getcwd())
+
 import pandas as pd
 import numpy as np
 import json
@@ -79,13 +83,13 @@ def ingest_data(file_path, cloud_provider):
                 """, {"rid": str(resource_id), "lid": str(region_id)})
 
         # 4. TimeFrame
-        cp_start = clean_value(get_col(row, 'ChargePeriodStart'))
-        cp_end = clean_value(get_col(row, 'ChargePeriodEnd'))
-        bp_start = clean_value(get_col(row, 'BillingPeriodStart'))
-        bp_end = clean_value(get_col(row, 'BillingPeriodEnd'))
+        cp_s = clean_value(get_col(row, 'ChargePeriodStart'))
+        cp_e = clean_value(get_col(row, 'ChargePeriodEnd'))
+        bp_s = clean_value(get_col(row, 'BillingPeriodStart'))
+        bp_e = clean_value(get_col(row, 'BillingPeriodEnd'))
         
-        time_frame_id = f"{cp_start}_{cp_end}"
-        if cp_start:
+        time_frame_id = f"{cp_s}_{cp_e}"
+        if cp_s:
             db.query("""
                 MERGE (t:TimeFrame {TimeFrameId: $id})
                 SET t.ChargePeriodStart = $cp_s, t.ChargePeriodEnd = $cp_e,
@@ -160,7 +164,27 @@ def ingest_data(file_path, cloud_provider):
             "tfid": time_frame_id, "ch_desc": ch_desc, "resid": str(resource_id), "vid": v_attr_id
         })
 
-        # 9. Allocation (If applicable)
+        # 9. Direct Tag Relationships (Strategic for retrieval)
+        if app:
+            db.query("""
+                MATCH (cr:CostRecord {RecordId: $rid})
+                MERGE (target:Application {name: $app})
+                MERGE (cr)-[:PART_OF_APP]->(target)
+            """, {"rid": record_id, "app": app})
+        if env:
+            db.query("""
+                MATCH (cr:CostRecord {RecordId: $rid})
+                MERGE (target:Environment {name: $env})
+                MERGE (cr)-[:PART_OF_ENV]->(target)
+            """, {"rid": record_id, "env": env})
+        if cc:
+            db.query("""
+                MATCH (cr:CostRecord {RecordId: $rid})
+                MERGE (target:CostCentre {name: $cc})
+                MERGE (cr)-[:PART_OF_CC]->(target)
+            """, {"rid": record_id, "cc": cc})
+
+        # 10. Allocation (If applicable)
         alloc_rule = clean_value(get_col(row, 'x_costallocationrulename'))
         if alloc_rule:
             db.query("""

@@ -1,4 +1,10 @@
 import streamlit as st
+import sys
+import os
+# Ensure the root directory is in the path so 'src' can be found
+if os.getcwd() not in sys.path:
+    sys.path.append(os.getcwd())
+
 from src.rag.pipeline import run_rag_pipeline
 import pandas as pd
 import time

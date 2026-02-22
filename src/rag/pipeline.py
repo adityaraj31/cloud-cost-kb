@@ -4,7 +4,6 @@ from src.rag.generator import generator
 def run_rag_pipeline(query):
     print(f"Pipeline: Processing query -> {query}")
     
-    # 1. Query Understanding (Intent & Entity Extraction)
     understand_prompt = f"""
     Analyze this cloud cost query: "{query}"
     Extract:
@@ -14,8 +13,16 @@ def run_rag_pipeline(query):
     
     Return as a concise JSON string.
     """
-    understanding = generator.model.generate_content(understand_prompt).text
-    print(f"Understanding: {understanding}")
+    try:
+        response = generator.client.chat.completions.create(
+            model=generator.model,
+            messages=[{"role": "user", "content": understand_prompt}]
+        )
+        understanding = response.choices[0].message.content
+        print(f"Understanding: {understanding}")
+    except Exception as e:
+        print(f"Failed to understand query: {e}")
+        understanding = "{}"
 
     # 2. Retrieve hybrid context
     findings = retriever.hybrid_retrieve(query)

@@ -49,13 +49,35 @@ class CloudRetriever:
             RETURN nodes(path) as nodes, [type(r)] as rels LIMIT 1
             """
             params = {"name": node_props.get("name")}
+        elif node_label == "Environment":
+            cypher = """
+            MATCH path = (e:Environment {name: $name})<-[:PART_OF_ENV]-(cr:CostRecord)-[:INCURRED_BY]->(r:Resource)
+            RETURN nodes(path) as nodes, [r in relationships(path) | type(r)] as rels 
+            ORDER BY cr.EffectiveCost DESC LIMIT 5
+            """
+            params = {"name": node_props.get("name")}
+        elif node_label == "Application":
+            cypher = """
+            MATCH path = (a:Application {name: $name})<-[:PART_OF_APP]-(cr:CostRecord)-[:INCURRED_BY]->(r:Resource)
+            RETURN nodes(path) as nodes, [r in relationships(path) | type(r)] as rels 
+            ORDER BY cr.EffectiveCost DESC LIMIT 5
+            """
+            params = {"name": node_props.get("name")}
+        elif node_label == "CostCentre":
+            cypher = """
+            MATCH path = (cc:CostCentre {name: $name})<-[:PART_OF_CC]-(cr:CostRecord)-[:INCURRED_BY]->(r:Resource)
+            RETURN nodes(path) as nodes, [r in relationships(path) | type(r)] as rels 
+            ORDER BY cr.EffectiveCost DESC LIMIT 5
+            """
+            params = {"name": node_props.get("name")}
         else:
             cypher = """
             MATCH path = (n)-[r]-(m)
-            WHERE id(n) = $id
+            WHERE elementId(n) = $id
             RETURN nodes(path) as nodes, [type(r)] as rels LIMIT 5
             """
-            params = {"id": node_props.get("id")}
+            # Use elementId since it's more reliable
+            params = {"id": node_props.get("id") or db.query("MATCH (n) WHERE n.name = $val OR n.ServiceName = $val RETURN elementId(n) as id", {"val": node_props.get("name") or node_props.get("ServiceName")})[0]["id"]}
             
         results = db.query(cypher, params)
         formatted_paths = []
